@@ -41,10 +41,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.Password = hashedPassword
-	result, err := models.Create(userCollection, user)
+	user.ID = models.GenerateID()
+	user.CreatedAt = models.GenerateTimestamp()
+	user.UpdatedAt = models.GenerateTimestamp()
+	_, err = models.Create(userCollection, user)
 	if err != nil {
 		utils.WriteError(w, err)
 		return
 	}
-	utils.WriteJSON(w, http.StatusCreated, result, "data")
+	utils.WriteJSON(w, http.StatusCreated, user.ID.Hex(), "user")
 }

@@ -28,5 +28,5 @@ func ConnectToDB(mongoUri string) *mongo.Client {
 var DB *mongo.Client
 
 func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	return client.Database("avi-social-media").Collection(collectionName)
+	return client.Database("gorilla_app").Collection(collectionName)
 }

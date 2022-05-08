@@ -5,9 +5,33 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func GenerateID() primitive.ObjectID {
+	return primitive.NewObjectID()
+}
+
+func GetIdFromHex(_id string) primitive.ObjectID {
+	isValid := primitive.IsValidObjectID(_id)
+	if !isValid {
+		panic("Invalid ObjectID")
+	}
+	id, err := primitive.ObjectIDFromHex(_id)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
+func GenerateTimestamp() primitive.Timestamp {
+	return primitive.Timestamp{
+		T: uint32(time.Now().Unix()),
+		I: 0,
+	}
+}
 
 func Create(collection *mongo.Collection, _doc interface{}) (*mongo.InsertOneResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
