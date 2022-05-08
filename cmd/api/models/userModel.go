@@ -1,22 +1,18 @@
-package usermodel
+package models
 
 import (
 	"context"
 	"fmt"
-	"go-gorilla-mongo/cmd/api/configs"
-	models "go-gorilla-mongo/cmd/api/models/schema"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var userCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
-
-func Create(_doc interface{}) (*mongo.InsertOneResult, error) {
+func Create(collection *mongo.Collection, _doc interface{}) (*mongo.InsertOneResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	res, err := userCollection.InsertOne(ctx, _doc)
+	res, err := collection.InsertOne(ctx, _doc)
 	if err != nil {
 		return nil, err
 	}
@@ -24,25 +20,26 @@ func Create(_doc interface{}) (*mongo.InsertOneResult, error) {
 	return res, nil
 }
 
-func FindOne(filter interface{}, options *options.FindOneOptions) *mongo.SingleResult {
+func FindOne(collection *mongo.Collection, filter interface{}, options *options.FindOneOptions) *mongo.SingleResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	res := userCollection.FindOne(ctx, filter, options)
+	res := collection.FindOne(ctx, filter, options)
 	return res
 }
 
-func Find(filter interface{}, options *options.FindOptions) []models.User {
+func Find(collection *mongo.Collection, filter interface{}, options *options.FindOptions) *mongo.Cursor {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	cursor, curError := userCollection.Find(ctx, filter, options)
+	cursor, curError := collection.Find(ctx, filter, options)
 	if curError != nil {
 		panic(curError)
 	}
 	defer cursor.Close(ctx)
-	var users []models.User
-	err := cursor.All(ctx, &users)
-	if err != nil {
-		panic(err)
-	}
-	return users
+	return cursor
+	// var users []models.User
+	// err := cursor.All(ctx, &users)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// return users
 }

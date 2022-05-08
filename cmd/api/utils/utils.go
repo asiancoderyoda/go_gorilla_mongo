@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func WriteJSON(w http.ResponseWriter, statusCode int, payload interface{}, wrap string) error {
@@ -28,6 +30,25 @@ func WriteError(w http.ResponseWriter, err error) {
 		Error: err.Error(),
 	}
 
-	WriteJSON(w, http.StatusUnprocessableEntity, httpError, "error")
+	writeErr := WriteJSON(w, http.StatusUnprocessableEntity, httpError, "error")
 
+	if writeErr != nil {
+		panic(writeErr)
+	}
+}
+
+func ValidatePassword(password string, hashedPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }

@@ -1,4 +1,4 @@
-package models
+package schema
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
