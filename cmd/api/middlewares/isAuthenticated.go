@@ -1,8 +1,12 @@
 package middlewares
 
 import (
+	"fmt"
+	"go-gorilla-mongo/cmd/api/configs"
 	"net/http"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func IsAuthenticated(next http.Handler) http.Handler {
@@ -23,4 +27,21 @@ func IsAuthenticated(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func VerifyToken(tokenString string) (bool, error) {
+	token, err := jwt.Parse(tokenString, func(parsedToken *jwt.Token) (interface{}, error) {
+		if _, ok := parsedToken.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", parsedToken.Header["alg"])
+		}
+		return []byte(configs.GetEnvFromKey("ACCESS_TOKEN_SECRET")), nil
+	})
+	if err != nil {
+		return false, err
+	}
+	if !token.Valid {
+		return false, nil
+	}
+
+	return true, nil
 }

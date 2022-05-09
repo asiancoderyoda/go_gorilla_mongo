@@ -64,6 +64,7 @@ func GenerateAuthToken(userId string) (string, string, error) {
 		"nbf":  time.Now().Unix(),                         // valid from this time
 		"exp":  time.Now().Add(time.Second * 3600).Unix(), // expires in
 		"iss":  "go-gorilla-mongo",
+		"alg":  "HS256",
 	})
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user": userId,
@@ -71,6 +72,7 @@ func GenerateAuthToken(userId string) (string, string, error) {
 		"nbf":  time.Now().Unix(),                          // valid from this time
 		"exp":  time.Now().Add(time.Second * 86400).Unix(), // expires in
 		"iss":  "go-gorilla-mongo",
+		"alg":  "HS256",
 	})
 	signedAccessToken, err := accessToken.SignedString(hmacAccessKeySecret)
 	if err != nil {
