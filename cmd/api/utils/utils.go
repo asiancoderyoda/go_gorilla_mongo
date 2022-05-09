@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"go-gorilla-mongo/cmd/api/configs"
-	"go-gorilla-mongo/cmd/api/schema"
 	"net/http"
 	"time"
 
@@ -57,18 +56,29 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func GenerateAuthToken(body schema.User) (string, error) {
+func GenerateAuthToken(userId string) (string, string, error) {
 	hmacAccessKeySecret := []byte(configs.GetEnvFromKey("ACCESS_TOKEN_SECRET"))
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": body,
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": userId,
+		"iat":  time.Now().Unix(),                         // issued at
+		"nbf":  time.Now().Unix(),                         // valid from this time
+		"exp":  time.Now().Add(time.Second * 3600).Unix(), // expires in
+		"iss":  "go-gorilla-mongo",
+	})
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": userId,
 		"iat":  time.Now().Unix(),                          // issued at
 		"nbf":  time.Now().Unix(),                          // valid from this time
 		"exp":  time.Now().Add(time.Second * 86400).Unix(), // expires in
 		"iss":  "go-gorilla-mongo",
 	})
-	signedToken, err := token.SignedString(hmacAccessKeySecret)
+	signedAccessToken, err := accessToken.SignedString(hmacAccessKeySecret)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return signedToken, nil
+	signedRefreshToken, err := refreshToken.SignedString(hmacAccessKeySecret)
+	if err != nil {
+		return "", "", err
+	}
+	return signedAccessToken, signedRefreshToken, nil
 }

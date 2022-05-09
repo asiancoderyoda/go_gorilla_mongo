@@ -11,3 +11,12 @@ type User struct {
 	CreatedAt      primitive.Timestamp `json:"created_at" bson:"created_at"`
 	UpdatedAt      primitive.Timestamp `json:"updated_at" bson:"updated_at"`
 }
+
+type UserResponse struct {
+	ID             string              `json:"_id"`
+	Name           string              `json:"name"`
+	Email          string              `json:"email"`
+	ProfilePicture string              `json:"profile_picture"`
+	CreatedAt      primitive.Timestamp `json:"created_at"`
+	UpdatedAt      primitive.Timestamp `json:"updated_at"`
+}

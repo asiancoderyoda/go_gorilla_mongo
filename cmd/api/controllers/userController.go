@@ -30,8 +30,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string      `json:"token"`
-	User  schema.User `json:"user"`
+	AccessToken  string              `json:"accessToken"`
+	RefreshToken string              `json:"refreshToken"`
+	User         schema.UserResponse `json:"user"`
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +63,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if !isValidUser {
 		utils.WriteJSON(w, http.StatusUnauthorized, "invalid username or password", "error")
 	}
-
+	accessToken, refreshToken, err := utils.GenerateAuthToken(user.ID.Hex())
+	if err != nil {
+		utils.WriteError(w, err)
+	}
+	AuthUser := schema.UserResponse{
+		ID:        user.ID.Hex(),
+		Email:     user.Email,
+		Name:      user.Name,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+	loginResponse := LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         AuthUser,
+	}
+	utils.WriteJSON(w, http.StatusOK, loginResponse, "data")
 }
 
 /*
