@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"go-gorilla-mongo/cmd/api/configs"
 	"go-gorilla-mongo/cmd/api/models"
@@ -34,13 +35,34 @@ type LoginResponse struct {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	// userCollection := configs.GetCollection(configs.DB, "users")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	userCollection := configs.GetCollection(configs.DB, "users")
 	var params LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		utils.WriteError(w, err)
 		return
 	}
+	var user schema.User
+	filter := map[string]interface{}{
+		"email": params.UserName,
+	}
+	item := models.FindOne(ctx, userCollection, filter, nil)
+	err = item.Decode(&user)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+	isValidUser, err := utils.ValidatePassword(params.Password, user.Password)
+	if err != nil {
+		utils.WriteError(w, err)
+		return
+	}
+	if !isValidUser {
+		utils.WriteJSON(w, http.StatusUnauthorized, "invalid username or password", "error")
+	}
+
 }
 
 /*
@@ -58,6 +80,8 @@ type ExistingUsers struct {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	userCollection := configs.GetCollection(configs.DB, "users")
 	var params RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&params)
@@ -80,21 +104,23 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var existingUsers []ExistingUsers
 	findOptions := &options.FindOptions{
 		Projection: map[string]interface{}{
-			"_id": 0,
+			"_id": 1,
 		},
 	}
-	// filter := map[string]interface{}{
-	// 	"email": user.Email,
-	// }
 	filter := bson.M{"email": user.Email}
-	userCursor := models.Find(userCollection, filter, findOptions)
-	err = userCursor.All(context.TODO(), &existingUsers)
+	userCursor := models.Find(ctx, userCollection, filter, findOptions)
+	for userCursor.Next(ctx) {
+		var existingUser ExistingUsers
+		err = userCursor.Decode(&existingUser)
+		if err != nil {
+			utils.WriteError(w, err)
+		}
+		existingUsers = append(existingUsers, existingUser)
+	}
 	if err != nil {
 		utils.WriteError(w, err)
 	}
-	fmt.Println(existingUsers)
 	if len(existingUsers) > 0 {
-		fmt.Println(existingUsers)
 		utils.WriteError(w, fmt.Errorf("user already exists"))
 		return
 	}
@@ -103,7 +129,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	user.ID = models.GenerateID()
 	user.CreatedAt = models.GenerateTimestamp()
 	user.UpdatedAt = models.GenerateTimestamp()
-	_, err = models.Create(userCollection, user)
+	_, err = models.Create(ctx, userCollection, user)
 	if err != nil {
 		utils.WriteError(w, err)
 		return

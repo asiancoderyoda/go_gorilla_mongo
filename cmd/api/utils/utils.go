@@ -2,8 +2,12 @@ package utils
 
 import (
 	"encoding/json"
+	"go-gorilla-mongo/cmd/api/configs"
+	"go-gorilla-mongo/cmd/api/schema"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -51,4 +55,20 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hashedPassword), nil
+}
+
+func GenerateAuthToken(body schema.User) (string, error) {
+	hmacAccessKeySecret := []byte(configs.GetEnvFromKey("ACCESS_TOKEN_SECRET"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": body,
+		"iat":  time.Now().Unix(),                          // issued at
+		"nbf":  time.Now().Unix(),                          // valid from this time
+		"exp":  time.Now().Add(time.Second * 86400).Unix(), // expires in
+		"iss":  "go-gorilla-mongo",
+	})
+	signedToken, err := token.SignedString(hmacAccessKeySecret)
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
 }

@@ -33,9 +33,7 @@ func GenerateTimestamp() primitive.Timestamp {
 	}
 }
 
-func Create(collection *mongo.Collection, _doc interface{}) (*mongo.InsertOneResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func Create(ctx context.Context, collection *mongo.Collection, _doc interface{}) (*mongo.InsertOneResult, error) {
 	res, err := collection.InsertOne(ctx, _doc)
 	if err != nil {
 		return nil, err
@@ -44,21 +42,16 @@ func Create(collection *mongo.Collection, _doc interface{}) (*mongo.InsertOneRes
 	return res, nil
 }
 
-func FindOne(collection *mongo.Collection, filter interface{}, options *options.FindOneOptions) *mongo.SingleResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func FindOne(ctx context.Context, collection *mongo.Collection, filter interface{}, options *options.FindOneOptions) *mongo.SingleResult {
 	res := collection.FindOne(ctx, filter, options)
 	return res
 }
 
-func Find(collection *mongo.Collection, filter interface{}, options *options.FindOptions) *mongo.Cursor {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func Find(ctx context.Context, collection *mongo.Collection, filter interface{}, options *options.FindOptions) *mongo.Cursor {
 	cursor, curError := collection.Find(ctx, filter, options)
 	if curError != nil {
 		panic(curError)
 	}
-	defer cursor.Close(ctx)
 	return cursor
 	// var users []models.User
 	// err := cursor.All(ctx, &users)
