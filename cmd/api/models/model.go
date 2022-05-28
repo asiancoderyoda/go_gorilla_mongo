@@ -53,10 +53,4 @@ func Find(ctx context.Context, collection *mongo.Collection, filter interface{},
 		panic(curError)
 	}
 	return cursor
-	// var users []models.User
-	// err := cursor.All(ctx, &users)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// return users
 }

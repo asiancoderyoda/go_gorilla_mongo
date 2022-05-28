@@ -79,6 +79,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		RefreshToken: refreshToken,
 		User:         AuthUser,
 	}
+	w.Header().Set("Authorization", "Bearer "+accessToken+":"+refreshToken)
 	utils.WriteJSON(w, http.StatusOK, loginResponse, "data")
 }
 
